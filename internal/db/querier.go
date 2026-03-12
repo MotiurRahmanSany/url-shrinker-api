@@ -11,16 +11,25 @@ import (
 )
 
 type Querier interface {
+	CountClicksByURLID(ctx context.Context, urlID int64) (int64, error)
+	CountClicksTodayByURLID(ctx context.Context, urlID int64) (int64, error)
+	CreateClick(ctx context.Context, arg CreateClickParams) (Click, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (CreateRefreshTokenRow, error)
+	CreateURL(ctx context.Context, arg CreateURLParams) (Url, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeactivateURL(ctx context.Context, id int64) error
 	DeleteAllUserTokens(ctx context.Context, userID pgtype.UUID) error
 	DeleteExpiredTokens(ctx context.Context) error
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	GetClicksByURLIDGroupedByDay(ctx context.Context, urlID int64) ([]GetClicksByURLIDGroupedByDayRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
+	GetURLByShortCode(ctx context.Context, shortCode string) (Url, error)
+	GetURLsByUserID(ctx context.Context, arg GetURLsByUserIDParams) ([]Url, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	RevokeRefreshToken(ctx context.Context, token string) error
+	UpdateURL(ctx context.Context, arg UpdateURLParams) (Url, error)
 }
 
 var _ Querier = (*Queries)(nil)

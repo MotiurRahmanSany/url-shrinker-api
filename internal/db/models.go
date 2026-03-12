@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Click struct {
+	ID        int64              `json:"id"`
+	UrlID     int64              `json:"url_id"`
+	ClickedAt pgtype.Timestamptz `json:"clicked_at"`
+	IpAddress pgtype.Text        `json:"ip_address"`
+	UserAgent pgtype.Text        `json:"user_agent"`
+	Referer   pgtype.Text        `json:"referer"`
+}
+
 type RefreshToken struct {
 	ID        int64            `json:"id"`
 	UserID    pgtype.UUID      `json:"user_id"`
@@ -15,6 +24,18 @@ type RefreshToken struct {
 	ExpiresAt pgtype.Timestamp `json:"expires_at"`
 	Revoked   bool             `json:"revoked"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+type Url struct {
+	ID          int64              `json:"id"`
+	ShortCode   string             `json:"short_code"`
+	OriginalUrl string             `json:"original_url"`
+	UserID      pgtype.UUID        `json:"user_id"`
+	IsActive    bool               `json:"is_active"`
+	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+	MaxClicks   pgtype.Int4        `json:"max_clicks"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {
