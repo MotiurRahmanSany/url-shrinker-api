@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/api/middleware"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/cache"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/config"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/database"
 )
@@ -18,6 +19,12 @@ func serve(config *config.Config) {
 	}
 	defer pool.Close()
 	// queries := db.New(pool)
+
+	_ = cache.NewRedisCache(
+		fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
+		config.Redis.Password,
+		config.Redis.DB,
+	)
 
 	mux := http.NewServeMux()
 
