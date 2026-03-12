@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
+
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/config"
 )
 
 func main() {
@@ -11,12 +13,13 @@ func main() {
 	// setup logger before any other logging calls
 	setupLogger()
 
-	mux := http.NewServeMux()
+	fmt.Println("Loading configuration...")
+	config := config.GetConfig()
+	fmt.Printf("Starting %s version %s on port %d\n", config.AppName, config.Version, config.HttpPort)
+	fmt.Printf("Database host: %s, port: %d, user: %s\n", config.Db.Host, config.Db.Port, config.Db.User)
+	fmt.Printf("Redis host: %s, port: %d\n", config.Redis.Host, config.Redis.Port)
 
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		slog.Error("Failed to start API server", "error", err)
-	}
+	serve(config)
 }
 
 func setupLogger() {
