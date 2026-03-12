@@ -3,11 +3,18 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/api/handlers"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/api/middleware"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/api/router"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/auth"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/cache"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/config"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/database"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/db"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/repository"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/service"
 )
 
 func serve(config *config.Config) {
@@ -18,7 +25,7 @@ func serve(config *config.Config) {
 		return
 	}
 	defer pool.Close()
-	// queries := db.New(pool)
+	queries := db.New(pool)
 
 	_ = cache.NewRedisCache(
 		fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
@@ -26,7 +33,21 @@ func serve(config *config.Config) {
 		config.Redis.DB,
 	)
 
-	mux := http.NewServeMux()
+	jwtManager := auth.NewJWTManager(config.JwtSecretKey, time.Minute*10)
+	tokenRepo := repository.NewTokenRepository(queries)
+
+	userRepo := repository.NewUserRepository(queries)
+
+	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager)
+
+	healthHandler := handlers.NewHealthHandler()
+	authHandler := handlers.NewAuthHandler(authService)
+
+	mux := router.Setup(
+		jwtManager,
+		healthHandler,
+		authHandler,
+	)
 
 	loggedMux := middleware.Logger(mux)
 
