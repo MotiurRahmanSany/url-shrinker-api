@@ -27,7 +27,7 @@ func serve(config *config.Config) {
 	defer pool.Close()
 	queries := db.New(pool)
 
-	_ = cache.NewRedisCache(
+	redisCache := cache.NewRedisCache(
 		fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
 		config.Redis.Password,
 		config.Redis.DB,
@@ -37,16 +37,21 @@ func serve(config *config.Config) {
 	tokenRepo := repository.NewTokenRepository(queries)
 
 	userRepo := repository.NewUserRepository(queries)
-
+	urlRepo := repository.NewUrlRepository(queries)
+	// clickRepo := repository.NewClickRepository(queries)
+	
 	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager)
+	urlService := service.NewUrlService(urlRepo, redisCache)
 
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(authService)
+	urlHandler := handlers.NewUrlHandler(urlService)
 
 	mux := router.Setup(
 		jwtManager,
 		healthHandler,
 		authHandler,
+		urlHandler,
 	)
 
 	loggedMux := middleware.Logger(mux)
