@@ -39,7 +39,7 @@ func serve(config *config.Config) {
 	userRepo := repository.NewUserRepository(queries)
 	urlRepo := repository.NewUrlRepository(queries)
 	// clickRepo := repository.NewClickRepository(queries)
-	
+
 	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager)
 	urlService := service.NewUrlService(urlRepo, redisCache)
 
@@ -49,6 +49,7 @@ func serve(config *config.Config) {
 
 	mux := router.Setup(
 		jwtManager,
+		redisCache,
 		healthHandler,
 		authHandler,
 		urlHandler,
