@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"net/url"
 	"regexp"
@@ -35,7 +36,7 @@ var (
 	maxPageLimit          int32 = 100
 	generatedCodeLength   int   = 7
 	generatedCodeMaxRetry int   = 5
-	defaultCacheTTL              = 24 * time.Hour
+	defaultCacheTTL             = 24 * time.Hour
 )
 
 var (
@@ -52,7 +53,7 @@ var (
 
 type UrlService interface {
 	CreateShortURL(ctx context.Context, shortCode, orgCode string, userID string, expiresAt time.Time, maxClicks int32) (domain.Url, error)
-	DeactivateURL(ctx context.Context, id int64) error
+	DeactivateURL(ctx context.Context, id int64, shortCode string) error
 	GetURLByShortCode(ctx context.Context, shortCode string) (domain.Url, error)
 	GetURLsByUserID(ctx context.Context, userID string, limit, offset int32) ([]domain.Url, error)
 	UpdateURL(ctx context.Context, id int64, orgURL string, expiresAt time.Time, maxClicks int32) (domain.Url, error)
@@ -130,21 +131,22 @@ func (s *urlService) GetURLByShortCode(ctx context.Context, shortCode string) (d
 	// Check cache first
 	cacheKey := buildURLCacheKey(trimmed)
 
-	if s.cache != nil{
+	if s.cache != nil {
 		cached, err := s.cache.Get(ctx, cacheKey)
 		if err == nil {
 			var u domain.Url
 
-			if jsonErr := json.Unmarshal([]byte(cached), &u); jsonErr == nil{
-				if vErr := validateURLIsActive(u); vErr != nil{
+			if jsonErr := json.Unmarshal([]byte(cached), &u); jsonErr == nil {
+				if vErr := validateURLIsActive(u); vErr != nil {
 					return domain.Url{}, vErr
 				}
 
 				return u, nil
 			}
-		}else if !errors.Is(err, cache.ErrCacheMiss) {
+		} else if !errors.Is(err, cache.ErrCacheMiss) {
 			// Log cache error but continue to fetch from DB
-			fmt.Printf("cache error: %v\n", err)
+			// fmt.Printf("cache error: %v\n", err)
+			slog.Error("cache error", "err", err, "key", shortCode)
 			// Optionally, we could return an error here if cache is critical
 
 		}
@@ -153,19 +155,19 @@ func (s *urlService) GetURLByShortCode(ctx context.Context, shortCode string) (d
 
 	u, err := s.repo.GetURLByShortCode(ctx, trimmed)
 
-	if err != nil{
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.Url{}, ErrURLNotFound
 		}
 		return domain.Url{}, err
 	}
 
-	if err := validateURLIsActive(u); err != nil{
+	if err := validateURLIsActive(u); err != nil {
 		return domain.Url{}, err
 	}
 
-	if s.cache != nil{
-		if payload, mErr := json.Marshal(u); mErr == nil{
+	if s.cache != nil {
+		if payload, mErr := json.Marshal(u); mErr == nil {
 			_ = s.cache.Set(ctx, cacheKey, string(payload), cacheTTLForURL(u.ExpiresAt))
 		}
 	}
@@ -191,8 +193,6 @@ func (s *urlService) GetURLsByUserID(ctx context.Context, userID string, limit, 
 	return s.repo.GetURLsByUserID(ctx, userID, &limit, &offset)
 }
 
-
-
 func (s *urlService) UpdateURL(ctx context.Context,
 	id int64,
 	orgURL string,
@@ -216,11 +216,27 @@ func (s *urlService) UpdateURL(ctx context.Context,
 		return domain.Url{}, err
 	}
 
+	if s.cache != nil {
+		cacheKey := buildURLCacheKey(updatedURL.ShortCode)
+		_ = s.cache.Delete(ctx, cacheKey) // Invalidate cache after update
+	}
+
 	return updatedURL, nil
 }
 
-func (s *urlService) DeactivateURL(ctx context.Context, id int64) error {
-	return s.repo.DeactivateURL(ctx, id)
+func (s *urlService) DeactivateURL(ctx context.Context, id int64, shortCode string) error {
+	if err := s.repo.DeactivateURL(ctx, id); err != nil {
+		return err
+	}
+
+	// Invalidate cache
+
+	if s.cache != nil && strings.TrimSpace(shortCode) != "" {
+		cacheKey := buildURLCacheKey(shortCode)
+		_ = s.cache.Delete(ctx, cacheKey)
+	}
+
+	return nil
 }
 func validateOriginalURL(rawUrl string) (string, error) {
 	rawUrl = strings.TrimSpace(rawUrl)
@@ -242,10 +258,9 @@ func validateOriginalURL(rawUrl string) (string, error) {
 	return u.String(), nil
 }
 
-
-/// this 
-func validateURLIsActive(u domain.Url) error{
-	if !u.IsActive{
+// / this
+func validateURLIsActive(u domain.Url) error {
+	if !u.IsActive {
 		return ErrURLExpiredOrInactive
 	}
 
@@ -289,13 +304,12 @@ func generateBase62(length int) (string, error) {
 	return sb.String(), nil
 }
 
-
-func buildURLCacheKey(shortCode string) string{
+func buildURLCacheKey(shortCode string) string {
 	return "url:" + shortCode
 }
 
 func cacheTTLForURL(expiresAt *time.Time) time.Duration {
-	if expiresAt == nil{
+	if expiresAt == nil {
 		return defaultCacheTTL
 	}
 	ttl := time.Until(*expiresAt)

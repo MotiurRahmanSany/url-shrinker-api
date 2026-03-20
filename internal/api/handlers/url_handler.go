@@ -206,7 +206,7 @@ func (h *UrlHandler) DeactivateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.urlService.DeactivateURL(r.Context(), url.ID); err != nil {
+	if err := h.urlService.DeactivateURL(r.Context(), url.ID, url.ShortCode); err != nil {
 		writeURLError(w, err)
 		return
 	}
