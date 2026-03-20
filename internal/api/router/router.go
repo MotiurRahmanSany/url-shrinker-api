@@ -26,6 +26,9 @@ func Setup(
 	mux.HandleFunc("POST /auth/login", authHandler.Login)
 	mux.HandleFunc("POST /auth/refresh", authHandler.RefreshToken)
 
+	// URL redirection (public)
+	mux.HandleFunc("GET /{code}", http.HandlerFunc(urlHandler.RedirectURL))
+
 	// Protected Routes - require authentication
 
 	authMw := middleware.AuthMiddleware(jwtManager)
@@ -37,10 +40,10 @@ func Setup(
 	// URL routes
 	mux.Handle("POST /urls", authMw(http.HandlerFunc(urlHandler.CreateShortURL)))
 	mux.Handle("GET /urls", authMw(http.HandlerFunc(urlHandler.ListMyURLs)))
-	mux.Handle("GET /urls/{code}", http.HandlerFunc(urlHandler.RedirectURL))
-	mux.Handle("GET /urls/{code}/details", authMw(http.HandlerFunc(urlHandler.GetURLDetails)))
+	mux.Handle("GET /urls/{code}", authMw(http.HandlerFunc(urlHandler.GetURLDetails)))
+	mux.Handle("PATCH /urls/{code}", authMw(http.HandlerFunc(urlHandler.UpdateURL)))
 	mux.Handle("DELETE /urls/{code}", authMw(http.HandlerFunc(urlHandler.DeactivateURL)))
-	mux.Handle("PUT /urls/{code}", authMw(http.HandlerFunc(urlHandler.UpdateURL)))
+	mux.Handle("GET /urls/{code}/stats", authMw(http.HandlerFunc(urlHandler.GetURLStats)))
 
 	return mux
 }
