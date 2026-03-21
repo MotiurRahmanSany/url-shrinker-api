@@ -38,14 +38,16 @@ func serve(config *config.Config) {
 
 	userRepo := repository.NewUserRepository(queries)
 	urlRepo := repository.NewUrlRepository(queries)
-	// clickRepo := repository.NewClickRepository(queries)
+	clickRepo := repository.NewClickRepository(queries)
 
 	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager)
 	urlService := service.NewUrlService(urlRepo, redisCache)
+	clickService := service.NewClickService(clickRepo)
 
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(authService)
-	urlHandler := handlers.NewUrlHandler(urlService)
+	urlHandler := handlers.NewUrlHandler(urlService, clickService)
+	clickHandler := handlers.NewClickHandler(clickService, urlService)
 
 	mux := router.Setup(
 		jwtManager,
@@ -53,6 +55,7 @@ func serve(config *config.Config) {
 		healthHandler,
 		authHandler,
 		urlHandler,
+		clickHandler,
 	)
 
 	loggedMux := middleware.Logger(mux)

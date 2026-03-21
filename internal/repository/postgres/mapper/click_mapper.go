@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"time"
+
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/db"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/domain"
 )
@@ -27,5 +29,17 @@ func ToCreateClickParams(
 		IpAddress: ToPgText(ip),
 		UserAgent: ToPgText(userAgent),
 		Referer:   ToPgText(referer),
+	}
+}
+
+func ToDomainClickDailyStat(row db.GetClicksByURLIDGroupedByDayRow) domain.ClickDailyStat {
+	day := row.Day.Time
+
+	if !row.Day.Valid {
+		day = time.Time{}
+	}
+	return domain.ClickDailyStat{
+		Day:   day,
+		Total: row.Total,
 	}
 }

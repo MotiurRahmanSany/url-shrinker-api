@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/service"
 )
 
-/* 
+/*
 demo for create
 {
 	"original_url": "https://www.example.com",
@@ -31,8 +32,8 @@ type CreateShortURLRequest struct {
 	MaxClicks       *int32     `json:"max_clicks,omitempty"`
 }
 
-/* 
-demo for update 
+/*
+demo for update
 {
 	"original_url": "https://www.newexample.com",
 	"expires_at": "2024-12-31T23:59:59Z",
@@ -49,11 +50,12 @@ type UpdateURLRequest struct {
 }
 
 type UrlHandler struct {
-	urlService service.UrlService
+	urlService   service.UrlService
+	clickService service.ClickService
 }
 
-func NewUrlHandler(urlService service.UrlService) *UrlHandler {
-	return &UrlHandler{urlService: urlService}
+func NewUrlHandler(urlService service.UrlService, clickService service.ClickService) *UrlHandler {
+	return &UrlHandler{urlService: urlService, clickService: clickService}
 }
 
 func (h *UrlHandler) CreateShortURL(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +119,35 @@ func (h *UrlHandler) RedirectURL(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeURLError(w, err)
 		return
+	}
+
+	ip := r.Header.Get("X-Real-IP")
+
+	if strings.TrimSpace(ip) == "" {
+		ip = r.RemoteAddr
+	}
+	ua := r.UserAgent()
+	ref := r.Referer()
+
+	var ipPtr, uaPtr, refPtr *string
+	if strings.TrimSpace(ip) != "" {
+		ipPtr = &ip
+	}
+	if strings.TrimSpace(ua) != "" {
+		uaPtr = &ua
+	}
+	if strings.TrimSpace(ref) != "" {
+		refPtr = &ref
+	}
+
+	if _, err := h.clickService.RecordClick(r.Context(), url.ID, ipPtr, uaPtr, refPtr); err != nil {
+		// Log the error but do not prevent the redirect, as click recording failure should not affect user experience
+		// In a real application, you would want to log this error to your logging system for later analysis
+		slog.WarnContext(r.Context(), "click recording failed; redirecting anyway",
+			"short_code", code,
+			"url_id", url.ID,
+			"error", err,
+		)
 	}
 
 	// Intentionally using 302 Found to allow clients to update the URL in their cache if needed
@@ -212,10 +243,6 @@ func (h *UrlHandler) DeactivateURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = response.Success(w, http.StatusOK, "URL deactivated successfully", nil)
-}
-
-func (h *UrlHandler) GetURLStats(w http.ResponseWriter, r *http.Request) {
-	_ = response.Error(w, http.StatusNotImplemented, "This endpoint is not implemented yet!", nil)
 }
 
 func (h *UrlHandler) UpdateURL(w http.ResponseWriter, r *http.Request) {

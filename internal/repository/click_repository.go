@@ -12,7 +12,7 @@ type ClickRepository interface {
 	CountClicksByURLID(ctx context.Context, urlID int64) (int64, error)
 	CountClicksTodayByURLID(ctx context.Context, urlID int64) (int64, error)
 	CreateClick(ctx context.Context, urlId int64, ipAddr, userAgent, referrer *string) (domain.Click, error)
-	// GetClicksByURLIDGroupedByDay(ctx context.Context, urlID int64) ([]db.GetClicksByURLIDGroupedByDayRow, error)
+	GetClicksByURLIDGroupedByDay(ctx context.Context, urlID int64) ([]domain.ClickDailyStat, error)
 }
 
 type clickRepository struct {
@@ -29,6 +29,18 @@ func (r *clickRepository) CountClicksByURLID(ctx context.Context, urlID int64) (
 
 func (r *clickRepository) CountClicksTodayByURLID(ctx context.Context, urlID int64) (int64, error) {
 	return r.q.CountClicksTodayByURLID(ctx, urlID)
+}
+
+func (r *clickRepository) GetClicksByURLIDGroupedByDay(ctx context.Context, urlID int64) ([]domain.ClickDailyStat, error) {
+	rows, err := r.q.GetClicksByURLIDGroupedByDay(ctx, urlID)
+	if err != nil {
+		return nil, err
+	}
+	var stats []domain.ClickDailyStat
+	for _, row := range rows {
+		stats = append(stats, mapper.ToDomainClickDailyStat(row))
+	}
+	return stats, nil
 }
 
 func (r *clickRepository) CreateClick(ctx context.Context, urlId int64, ipAddr, userAgent, referrer *string) (domain.Click, error) {

@@ -16,6 +16,7 @@ func Setup(
 	healthHandler *handlers.HealthHandler,
 	authHandler *handlers.AuthHandler,
 	urlHandler *handlers.UrlHandler,
+	clickHandler *handlers.ClickHandler,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -47,7 +48,7 @@ func Setup(
 	mux.Handle("GET /urls/{code}", authMw(http.HandlerFunc(urlHandler.GetURLDetails)))
 	mux.Handle("PATCH /urls/{code}", authMw(http.HandlerFunc(urlHandler.UpdateURL)))
 	mux.Handle("DELETE /urls/{code}", authMw(http.HandlerFunc(urlHandler.DeactivateURL)))
-	mux.Handle("GET /urls/{code}/stats", authMw(http.HandlerFunc(urlHandler.GetURLStats)))
+	mux.Handle("GET /urls/{code}/stats", authMw(http.HandlerFunc(clickHandler.GetURLStats)))
 
 	return mux
 }

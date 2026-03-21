@@ -10,3 +10,8 @@ type Click struct {
 	UserAgent *string   `json:"user_agent,omitempty"`
 	Referer   *string   `json:"referer,omitempty"`
 }
+
+type ClickDailyStat struct {
+	Day   time.Time `json:"day"`
+	Total int64     `json:"total"`
+}
