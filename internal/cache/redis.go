@@ -20,6 +20,7 @@ type Cache interface {
 	Delete(ctx context.Context, key string) error
 	Increment(ctx context.Context, key string) (int64, error)
 	Expire(ctx context.Context, key string, ttl time.Duration) error
+	Close() error
 }
 
 type redisCache struct {
@@ -61,4 +62,8 @@ func (c *redisCache) Increment(ctx context.Context, key string) (int64, error) {
 
 func (c *redisCache) Expire(ctx context.Context, key string, ttl time.Duration) error {
 	return c.client.Expire(ctx, key, ttl).Err()
+}
+
+func (c *redisCache) Close() error {
+	return c.client.Close()
 }
