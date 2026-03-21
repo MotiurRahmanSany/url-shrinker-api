@@ -20,6 +20,7 @@ type Querier interface {
 	DeactivateURL(ctx context.Context, id int64) error
 	DeleteAllUserTokens(ctx context.Context, userID pgtype.UUID) error
 	DeleteExpiredTokens(ctx context.Context) error
+	DeleteExpiredURLs(ctx context.Context) (int64, error)
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
 	GetClicksByURLIDGroupedByDay(ctx context.Context, urlID int64) ([]GetClicksByURLIDGroupedByDayRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)

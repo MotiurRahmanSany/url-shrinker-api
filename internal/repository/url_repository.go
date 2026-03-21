@@ -15,6 +15,7 @@ type UrlRepository interface {
 	GetURLsByUserID(ctx context.Context, userID string, limit, offset *int32) ([]domain.Url, error)
 	UpdateURL(ctx context.Context, id int64, originalUrl string, expiresAt *time.Time, maxClicks *int32) (domain.Url, error)
 	DeactivateURL(ctx context.Context, urlID int64) error
+	DeleteExpiredURLs(ctx context.Context) (int64, error)
 }
 
 type urlRepository struct {
@@ -93,4 +94,9 @@ func (r *urlRepository) UpdateURL(ctx context.Context, id int64, originalUrl str
 
 func (r *urlRepository) DeactivateURL(ctx context.Context, urlID int64) error {
 	return r.q.DeactivateURL(ctx, urlID)
+}
+
+
+func (r *urlRepository) DeleteExpiredURLs(ctx context.Context) (int64, error) {
+	return r.q.DeleteExpiredURLs(ctx)
 }

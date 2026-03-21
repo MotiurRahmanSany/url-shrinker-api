@@ -67,6 +67,20 @@ func (q *Queries) DeactivateURL(ctx context.Context, id int64) error {
 	return err
 }
 
+const deleteExpiredURLs = `-- name: DeleteExpiredURLs :execrows
+DELETE FROM urls
+WHERE expires_at IS NOT NULL
+AND expires_at < NOW()
+`
+
+func (q *Queries) DeleteExpiredURLs(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteExpiredURLs)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getURLByShortCode = `-- name: GetURLByShortCode :one
 SELECT id, short_code, original_url, user_id, is_active, expires_at, max_clicks, created_at, updated_at
 FROM urls

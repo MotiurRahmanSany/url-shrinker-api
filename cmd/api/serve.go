@@ -20,6 +20,7 @@ import (
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/db"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/repository"
 	"github.com/MotiurRahmanSany/url-shrinker-api/internal/service"
+	"github.com/MotiurRahmanSany/url-shrinker-api/internal/worker"
 )
 
 var (
@@ -96,6 +97,15 @@ func serve(config *config.Config) {
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	go func(){
+		// Start background worker for cleaning up expired URLs every hour
+		if err := worker.StartExpiredURLCleanupWorker(rootCtx, urlRepo, time.Hour); err != nil{
+			slog.Error("expired URL cleanup worker failed", "err", err)
+		}
+	}()
+
+
 	<-rootCtx.Done()
 
 	slog.Info("shutdown signal received")

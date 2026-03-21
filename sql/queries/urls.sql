@@ -41,3 +41,9 @@ SET original_url = $2,
     updated_at    = NOW()
 WHERE id = $1
 RETURNING id, short_code, original_url, user_id, is_active, expires_at, max_clicks, created_at, updated_at;
+
+
+-- name: DeleteExpiredURLs :execrows
+DELETE FROM urls
+WHERE expires_at IS NOT NULL
+AND expires_at < NOW();
