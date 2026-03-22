@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -121,7 +122,8 @@ func (h *UrlHandler) RedirectURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip := r.Header.Get("X-Real-IP")
+	// ip := r.Header.Get("X-Real-IP")
+	ip := extractClientIP(r)
 
 	if strings.TrimSpace(ip) == "" {
 		ip = r.RemoteAddr
@@ -326,6 +328,24 @@ func (h *UrlHandler) UpdateURL(w http.ResponseWriter, r *http.Request) {
 	_ = response.Success(w, http.StatusOK, "URL updated successfully", updatedUrl)
 }
 
+func extractClientIP(r *http.Request) string {
+	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+		parts := strings.Split(xff, ",")
+		return strings.TrimSpace(parts[0])
+	}
+
+	if xr := strings.TrimSpace(r.Header.Get("X-Real-IP")); xr != "" {
+		return xr
+	}
+
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil && host != "" {
+		return host
+	}
+
+	return strings.TrimSpace(r.RemoteAddr)
+}
+
 func isOwner(u domain.Url, requesterUserID string) bool {
 	return strings.TrimSpace(u.UserID) != "" && u.UserID == requesterUserID
 }
@@ -367,7 +387,7 @@ func writeURLError(w http.ResponseWriter, err error) {
 		_ = response.Error(w, http.StatusNotFound, "URL not found", nil)
 	case errors.Is(err, service.ErrShortCodeTaken):
 		_ = response.Error(w, http.StatusConflict, "Short code already in use", nil)
-	case errors.Is(err, service.ErrURLExpiredOrInactive):
+	case errors.Is(err, service.ErrURLExpiredOrInactive), errors.Is(err, service.ErrMaxClicksReached):
 		_ = response.Error(w, http.StatusGone, "URL is no longer active", nil)
 	default:
 		_ = response.Error(w, http.StatusInternalServerError, "Internal server error", err.Error())

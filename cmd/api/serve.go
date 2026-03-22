@@ -82,33 +82,42 @@ func serve(config *config.Config) {
 		IdleTimeout:       ServerIdleTimeout,
 	}
 
+	serverErrCh := make(chan error, 1)
+
 	// Starting the server
 	go func() {
 		slog.Info("server starting", "port", config.HttpPort, "base_url", fmt.Sprintf("http://localhost:%d", config.HttpPort))
 
 		if err := server.ListenAndServe(); err != nil {
 			if errors.Is(err, http.ErrServerClosed) {
-				slog.Info("server closed")
-			} else {
-				slog.Error("server failed", "err", err)
+				slog.Info("server gracefully stopped")
+				return
 			}
+			serverErrCh <- err
 		}
 	}()
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go func(){
+	workerErrCh := make(chan error, 1)
+
+	go func() {
 		// Start background worker for cleaning up expired URLs every hour
-		if err := worker.StartExpiredURLCleanupWorker(rootCtx, urlRepo, time.Hour); err != nil{
-			slog.Error("expired URL cleanup worker failed", "err", err)
-		}
+		workerErrCh <- worker.StartExpiredURLCleanupWorker(rootCtx, urlRepo, time.Hour)
 	}()
 
+	select {
+	case <-rootCtx.Done():
+		slog.Info("shutdown signal received")
+	case err := <-serverErrCh:
+		slog.Error("server failed to start or crashed", "err", err)
+		stop()
+	case err := <-workerErrCh:
+		slog.Error("cleanup worker failed", "err", err)
+		stop()
 
-	<-rootCtx.Done()
-
-	slog.Info("shutdown signal received")
+	}
 
 	// Graceful shutdown with a timeout context
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), ServerShutdownTimeout)
