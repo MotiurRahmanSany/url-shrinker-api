@@ -54,7 +54,7 @@ func serve(config *config.Config) {
 	clickRepo := repository.NewClickRepository(queries)
 
 	authService := service.NewAuthService(userRepo, tokenRepo, jwtManager)
-	urlService := service.NewUrlService(urlRepo, redisCache)
+	urlService := service.NewUrlService(urlRepo, clickRepo, redisCache)
 	clickService := service.NewClickService(clickRepo)
 
 	healthHandler := handlers.NewHealthHandler()

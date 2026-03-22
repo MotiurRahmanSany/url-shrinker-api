@@ -60,12 +60,13 @@ type UrlService interface {
 }
 
 type urlService struct {
-	repo  repository.UrlRepository
-	cache cache.Cache
+	repo      repository.UrlRepository
+	clickRepo repository.ClickRepository
+	cache     cache.Cache
 }
 
-func NewUrlService(repo repository.UrlRepository, redisCache cache.Cache) UrlService {
-	return &urlService{repo: repo, cache: redisCache}
+func NewUrlService(repo repository.UrlRepository, clickRepo repository.ClickRepository, redisCache cache.Cache) UrlService {
+	return &urlService{repo: repo, clickRepo: clickRepo, cache: redisCache}
 }
 
 func (s *urlService) CreateShortURL(
@@ -141,6 +142,10 @@ func (s *urlService) GetURLByShortCode(ctx context.Context, shortCode string) (d
 					return domain.Url{}, vErr
 				}
 
+				if mErr := s.enforceMaxClickLimit(ctx, u); mErr != nil {
+					return domain.Url{}, mErr
+				}
+
 				return u, nil
 			}
 		} else if !errors.Is(err, cache.ErrCacheMiss) {
@@ -163,6 +168,10 @@ func (s *urlService) GetURLByShortCode(ctx context.Context, shortCode string) (d
 	}
 
 	if err := validateURLIsActive(u); err != nil {
+		return domain.Url{}, err
+	}
+
+	if err := s.enforceMaxClickLimit(ctx, u); err != nil {
 		return domain.Url{}, err
 	}
 
@@ -347,4 +356,25 @@ func toOptionalInt32(v int32) *int32 {
 		return nil
 	}
 	return &v
+}
+
+func (s *urlService) enforceMaxClickLimit(ctx context.Context, u domain.Url) error {
+	if u.MaxClicks == nil || *u.MaxClicks <= 0 {
+		return nil
+	}
+
+	if s.clickRepo == nil {
+		return nil
+	}
+
+	totalClicks, err := s.clickRepo.CountClicksByURLID(ctx, u.ID)
+	if err != nil {
+		return err
+	}
+
+	if totalClicks >= int64(*u.MaxClicks) {
+		return ErrMaxClicksReached
+	}
+
+	return nil
 }

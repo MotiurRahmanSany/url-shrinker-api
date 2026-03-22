@@ -52,12 +52,14 @@ func loadConfig() {
 
 	if httpPort == "" {
 		fmt.Println("HTTP_PORT not set in .env file, using default value 8080")
+		httpPort = "8080"
 	}
 
 	httpPortInt, err := strconv.ParseInt(httpPort, 10, 64)
 
 	if err != nil {
 		fmt.Printf("Error parsing HTTP_PORT: %v, using default value 8080\n", err)
+		httpPortInt = 8080
 	}
 
 	serviceName := os.Getenv("SERVICE_NAME")
