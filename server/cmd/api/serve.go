@@ -71,7 +71,8 @@ func serve(config *config.Config) {
 		clickHandler,
 	)
 
-	loggedMux := middleware.Logger(mux)
+	corsMux := middleware.CORS(mux)
+	loggedMux := middleware.Logger(corsMux)
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", config.HttpPort),
