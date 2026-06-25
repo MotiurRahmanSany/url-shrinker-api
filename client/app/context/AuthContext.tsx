@@ -12,8 +12,8 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
-  logout: () => void;
+  login: (token: string, refreshToken?: string) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,13 +41,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (token: string) => {
+  const login = async (token: string, refreshToken?: string) => {
     localStorage.setItem("access_token", token);
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+    }
     await fetchMe();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      try {
+        await apiRequest("/auth/logout", {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      } catch (e) {
+        console.error("Logout request failed", e);
+      }
+    }
     clearAuthToken();
+    localStorage.removeItem("refresh_token");
     setUser(null);
   };
 

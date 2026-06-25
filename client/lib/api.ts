@@ -21,18 +21,75 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  let response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
-  const data = await response.json();
+  // Check if response has body (e.g. 204 has no body)
+  let data: any = {};
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    data = await response.json();
+  }
 
   if (!response.ok) {
-    // If unauthorized, could clear token and redirect to login
-    if (response.status === 401 && typeof window !== "undefined") {
+    // If unauthorized, try to refresh token (avoid loop if already refreshing/logging in)
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      endpoint !== "/auth/login" &&
+      endpoint !== "/auth/refresh"
+    ) {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        try {
+          const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            if (refreshData.success && refreshData.data) {
+              const { access_token, refresh_token: newRefreshToken } = refreshData.data;
+              localStorage.setItem("access_token", access_token);
+              if (newRefreshToken) {
+                localStorage.setItem("refresh_token", newRefreshToken);
+              }
+
+              // Retry the original request with the new token
+              headers.set("Authorization", `Bearer ${access_token}`);
+              response = await fetch(`${BASE_URL}${endpoint}`, {
+                ...options,
+                headers,
+              });
+
+              const retryContentType = response.headers.get("content-type");
+              if (retryContentType && retryContentType.includes("application/json")) {
+                data = await response.json();
+              } else {
+                data = {};
+              }
+
+              if (response.ok) {
+                return data;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Token refresh failed", e);
+        }
+      }
+
+      // If refresh failed or was not possible, clean up
       localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
     }
+
     return {
       success: false,
       message: data.message || "An error occurred",

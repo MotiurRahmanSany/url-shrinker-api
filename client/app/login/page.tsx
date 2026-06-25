@@ -7,7 +7,9 @@ import { apiRequest } from "@/lib/api";
 import { useAuth } from "../context/AuthContext";
 import { Loader2, Mail, Lock, LogIn } from "lucide-react";
 
-export default function Login() {
+import { Suspense } from "react";
+
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,13 +31,13 @@ export default function Login() {
     setError("");
     setSuccess("");
 
-    const res = await apiRequest<{ access_token: string }>("/auth/login", {
+    const res = await apiRequest<{ access_token: string; refresh_token: string }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
 
     if (res.success && res.data) {
-      await login(res.data.access_token);
+      await login(res.data.access_token, res.data.refresh_token);
       router.push("/dashboard");
     } else {
       setError(res.message || "Login failed");
@@ -113,5 +115,17 @@ export default function Login() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
