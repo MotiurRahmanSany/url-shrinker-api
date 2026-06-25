@@ -156,7 +156,7 @@ Ensure your `.env` is configured correctly (especially the `GOOSE_DBSTRING` for 
 
 ```env
 APP_ENV=development
-HTTP_PORT=8080
+HTTP_PORT=8090
 SERVICE_NAME=URL Shrinker
 JWT_SECRET_KEY=your_super_secret_jwt_key
 
@@ -191,13 +191,21 @@ make migrate-up
 ```bash
 make run
 ```
-Your backend will start actively processing at `http://localhost:8080/health`.
+Your backend will start actively processing at `http://localhost:8090/health`.
+
+5. Run the frontend Next.js development server:
+```bash
+cd client
+npm install
+npm run dev
+```
+Your frontend will start running at `http://localhost:3000`. Refer to [client/README.md](client/README.md) for detailed frontend client documentation.
 
 ### Testing
 
 Generate a shortlink (Requires JWT token from Login step):
 ```bash
-curl -X POST http://localhost:8080/urls \
+curl -X POST http://localhost:8090/urls \
 	-H "Authorization: Bearer ACCESS_TOKEN" \
 	-H "Content-Type: application/json" \
 	-d '{"original_url":"https://github.com", "custom_short_code":"gh"}'
@@ -205,7 +213,7 @@ curl -X POST http://localhost:8080/urls \
 
 Verify Redirect mapping (Fast Redis execution):
 ```bash
-curl -i http://localhost:8080/gh
+curl -i http://localhost:8090/gh
 ```
 
 ### Automation Scripts (`Makefile`)
