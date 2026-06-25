@@ -57,6 +57,7 @@ func serve(config *config.Config) {
 	urlService := service.NewUrlService(urlRepo, clickRepo, redisCache)
 	clickService := service.NewClickService(clickRepo)
 
+	homeHandler := handlers.NewHomeHandler()
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(authService)
 	urlHandler := handlers.NewUrlHandler(urlService, clickService)
@@ -65,6 +66,7 @@ func serve(config *config.Config) {
 	mux := router.Setup(
 		jwtManager,
 		redisCache,
+		homeHandler,
 		healthHandler,
 		authHandler,
 		urlHandler,

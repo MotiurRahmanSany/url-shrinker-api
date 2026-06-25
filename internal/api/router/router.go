@@ -13,6 +13,7 @@ import (
 func Setup(
 	jwtManager *auth.JWTManager,
 	redisCache cache.Cache,
+	homeHandler *handlers.HomeHandler,
 	healthHandler *handlers.HealthHandler,
 	authHandler *handlers.AuthHandler,
 	urlHandler *handlers.UrlHandler,
@@ -22,6 +23,9 @@ func Setup(
 
 	// Public Routes
 
+	// Home
+	mux.HandleFunc("GET /", homeHandler.Welcome)
+	
 	// health
 	mux.HandleFunc("GET /health", healthHandler.Check)
 
