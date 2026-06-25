@@ -1,0 +1,119 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{tocbibind}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{longtable}
+
+% Line spacing
+\onehalfspacing
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,      
+    urlcolor=blue,
+    citecolor=black,
+}
+
+% Code Listing Styling
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4
+}
+\lstset{style=mystyle}
+
+% Header and Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Industrial Attachment Report}
+\fancyhead[R]{\small Texlab IT}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+% Front Matter
+\pagenumbering{roman}
+\input{chapters/titlepage}
+\newpage
+\input{chapters/declaration}
+\newpage
+\input{chapters/acknowledgement}
+\newpage
+\input{chapters/executive_summary}
+\newpage
+
+\tableofcontents
+\newpage
+\begingroup
+\let\clearpage\relax
+\listoffigures
+\vspace{1.5cm}
+\listoftables
+\endgroup
+\newpage
+
+% List of Abbreviations
+\input{chapters/abbreviations}
+
+\newpage
+\pagenumbering{arabic}
+
+% Chapters
+\input{chapters/introduction}
+\input{chapters/organization}
+\input{chapters/project_overview}
+\input{chapters/tools_techniques}
+\input{chapters/societal_considerations}
+\input{chapters/ethics_responsibilities}
+\input{chapters/skills_learning}
+\input{chapters/challenges_solutions}
+\input{chapters/contribution}
+\input{chapters/conclusion}
+
+% Bibliography
+\newpage
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+% Appendices
+\newpage
+\appendix
+\input{chapters/appendices}
+
+\end{document}

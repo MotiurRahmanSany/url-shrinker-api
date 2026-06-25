@@ -1,0 +1,57 @@
+\chapter{Challenges \& Solutions}
+
+\section{Technical Challenges and Resolutions}
+Developing a full-stack, containerized application in a short period involves resolving various configuration, environment, and concurrency issues. Below are the key technical challenges encountered and how they were resolved:
+
+\subsection{Next.js Turbopack Compiler Instability}
+\textbf{Challenge:} When running the Next.js frontend client dev server with Turbopack enabled (`next dev --turbo`), the development server suffered from sudden, fatal crashes, displaying: `FATAL: An unexpected Turbopack error`. This interrupted the development flow and prevented consistent integration testing.
+\textbf{Resolution:} Through investigation, the crash was identified as a cache/watcher conflicts in Next.js's experimental Turbopack engine on the Linux file system. The issue was resolved by:
+\begin{enumerate}
+    \item Deleting the `.next` compiler cache directory to clear corrupted state.
+    \item Editing the development startup script in `package.json` to run the dev server without the `--turbo` flag, falling back to the Webpack compiler:
+    \begin{lstlisting}[language=bash]
+    rm -rf .next && npm run dev
+    \end{lstlisting}
+\end{enumerate}
+This restored compilation stability, allowing continuous frontend development without crashes.
+
+\subsection{Database Startup Race Condition in Docker Compose}
+\textbf{Challenge:} When launching the full stack using `docker-compose up`, the Go backend container would start and attempt to connect to PostgreSQL. However, PostgreSQL takes several seconds to initialize its database and accept TCP connections. As a result, the Go backend failed to connect, logged a fatal connection error, and terminated immediately.
+\textbf{Resolution:} This was resolved by implementing two enhancements:
+\begin{enumerate}
+    \item **Docker Compose Health Checks:** Adding a health check block to the PostgreSQL service definition in `docker-compose.yaml` to verify DB readiness.
+    \item **Depends On Configuration:** Adding a `depends_on` block with a `service_healthy` condition in the Go backend service definition.
+\end{enumerate}
+This configuration forced the Go backend container to wait until PostgreSQL completed its startup checks before running migrations and booting the API server.
+
+\subsection{Redis Rate Limiter Concurrency Race Conditions}
+\textbf{Challenge:} The sliding-window rate limiter tracks requests using a Redis Sorted Set (ZSET). Under high-concurrency requests from the same client IP address, multiple read and write requests occurred simultaneously. This created race conditions where request counts were miscalculated, allowing clients to occasionally bypass rate limits.
+\textbf{Resolution:} To resolve this concurrency issue, the rate limiter implementation was updated to use a **Redis Multi/Exec Transaction Pipeline**. By grouping the operations:
+\begin{lstlisting}[language=Go]
+pipe := r.redisClient.TxPipeline()
+pipe.ZRemRangeByScore(ctx, key, "0", strconv.FormatInt(clearBefore, 10))
+pipe.ZCard(ctx, key)
+pipe.ZAdd(ctx, key, redis.Z{Score: float64(now), Member: now})
+pipe.Expire(ctx, key, windowDuration)
+_, err := pipe.Exec(ctx)
+\end{lstlisting}
+We ensured that all Redis commands in the sliding-window check are executed as an atomic unit, preventing intermediate states from being read by parallel goroutines.
+
+\section{Administrative and Organizational Challenges}
+Beyond technical obstacles, the internship involved managing several organizational and workflow constraints:
+
+\subsection{Fixed Two-Week Timeline}
+\textbf{Challenge:} Fitting a complete full-stack development lifecycle (design, database migration, backend implementation, frontend design, integration, and report writing) into a strict two-week window was challenging.
+\textbf{Resolution:} Tasks were managed using a daily personal Scrum board. High-priority features (core URL redirection, Redis cache layer, and database schema) were completed first, while auxiliary features (such as user profile edits and detailed charts) were deferred to ensure a functional, stable prototype was ready by the deadline.
+
+\subsection{Configuration Synchronization}
+\textbf{Challenge:} Synchronizing local database credentials, JWT secret keys, and Redis addresses across different containers without hardcoding secrets in source files.
+\textbf{Resolution:} A centralized `.env` configuration file was used. A `.env.example` file was added to version control, allowing developers to set local secrets independently while using a Go configuration parser (`internal/config`) to safely validate environment variables at startup.
+
+\section{Lessons Learned}
+The process of identifying and resolving these challenges yielded valuable engineering lessons:
+\begin{itemize}
+    \item \textbf{Container Dependency Ordering:} A container being "up" is not the same as it being "ready." Using Docker health checks is essential for multi-container orchestration.
+    \item \textbf{Atheism toward Experimental Features:} While experimental compilers (like Turbopack) promise fast build times, Webpack remains the industry choice when environment stability is required.
+    \item \textbf{Atomic Operations in Distributed Systems:} In high-concurrency environments, separate operations on a cache or database must be executed atomically (using SQL transactions or Redis pipelines) to prevent race conditions.
+\end{itemize}

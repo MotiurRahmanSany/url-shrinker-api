@@ -1,0 +1,62 @@
+\chapter{Skills Gained \& Lifelong Learning}
+
+\section{New Technical Skills Learned}
+During the two-week attachment at Texlab IT, I gained hands-on experience in backend API development, system design, caching layers, and database integration.
+
+\subsection{Backend Development with Go}
+Prior to the internship, my knowledge of Go was largely theoretical. During the attachment, I gained practical proficiency in:
+\begin{itemize}
+    \item Designing HTTP middleware chains for CORS handling, request logging, and JWT verification.
+    \item Utilizing Go's standard library `net/http` to build clean RESTful APIs without relying on large frameworks (like Gin or Fiber), promoting a better understanding of HTTP request-response flows.
+    \item Managing concurrent tasks using goroutines and channels, ensuring background processes do not block user requests.
+\end{itemize}
+
+\subsection{Advanced Relational Database Practices}
+I improved my database engineering skills by moving beyond basic SQL queries to professional workflows:
+\begin{itemize}
+    \item \textbf{Schema Migrations:} Using **goose** to write version-controlled schema definitions, allowing database version sync across different development machines.
+    \item \textbf{Type-Safe Query Generation:} Learning **sqlc** to compile raw SQL files into type-safe Go structs and functions. This eliminated the boilerplate of scanning rows manually and reduced SQL execution errors.
+    \item \textbf{Index Optimization:} Placing database indexes on query columns (such as the short `code` column) to achieve logarithmic lookup times.
+\end{itemize}
+
+\subsection{Caching and Rate-Limiting with Redis}
+I gained hands-on experience with in-memory caching and Redis data structures:
+\begin{itemize}
+    \item Implementing the **Cache-Aside pattern**, writing logic to read from Redis, write to Redis on a database miss, and invalidate keys upon updates.
+    \item Building a sliding-window rate limiter using **Redis Sorted Sets (ZSET)**. This involved storing timestamps of incoming requests and using atomic Redis commands (`ZREMRANGEBYSCORE`, `ZCARD`, `ZADD`, and `EXPIRE`) to track IP request limits.
+\end{itemize}
+
+\subsection{Frontend Development and Integration}
+On the client side, I worked with React and Next.js, learning how to:
+\begin{itemize}
+    \item Connect React state forms to a Go backend REST API.
+    \item Manage local storage and state hydration for JWT tokens.
+    \item Configure Next.js environments for local API redirection and proxying.
+\end{itemize}
+
+\section{Self-Directed Learning Activities and Resources Used}
+Industrial environments require engineers to acquire knowledge independently. When building the URL Shrinker API, I used several self-directed learning methods:
+\begin{itemize}
+    \item \textbf{Official Documentation:} Reading the Go package documentation (`golang.org/pkg`), the official PostgreSQL 16 manual, and Redis command reference guides.
+    \item \textbf{Technical Blogs & Engineering Articles:} Studying system design patterns for high-throughput link shorteners on sites like *Medium*, *InfoQ*, and the *Redis Developer Hub*.
+    \item \textbf{Open Source Repositories:} Analyzing open-source Go API architectures on GitHub to learn best practices for project structure, folder layouts, and dependency injection.
+\end{itemize}
+
+\section{Adaptation to New Technologies and Industry Trends}
+Modern web engineering shifts rapidly. Adapting to new design patterns was a core part of the attachment experience:
+\begin{itemize}
+    \item \textbf{From ORMs to Compile-Time SQL:} I transitioned from standard ORMs (like Gorm) to `sqlc`. While ORMs are easy to use initially, they hide SQL details and can result in slow queries. Adapting to `sqlc` required a mental shift toward writing pure, optimized SQL first and letting the compiler generate the Go models.
+    \item \textbf{Handling Compilation Toolchains:} Debugging Next.js development server crashes required learning how compile caches (`.next`) function and how to switch compilers (from Turbopack to standard Webpack) to maintain environment stability.
+\end{itemize}
+
+\section{Reflection on the Importance of Lifelong Learning}
+My experience at Texlab IT highlighted that software engineering is a field of constant change. Runtimes, libraries, and security standards evolve continuously. For instance, Go's routing features have updated in recent releases, and frontend tools shift from Webpack to Vite and Turbopack. 
+
+Lifelong learning is not just about memorizing syntax, but about understanding underlying engineering principles:
+\begin{itemize}
+    \item How data is structured in memory vs. disk.
+    \item How network packets flow across HTTP boundaries.
+    \item How cache eviction strategies manage resource limits.
+\end{itemize}
+By focusing on these core concepts during my industrial attachment, I am better equipped to learn and adopt future technologies, tools, and platforms throughout my engineering career.
+Clear planning, reading technical documentation, and hands-on experimentation are the key tools for continuous growth in the software industry.

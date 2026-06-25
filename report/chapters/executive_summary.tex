@@ -1,0 +1,10 @@
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+
+This report documents the industrial attachment undertaken at \textbf{Texlab IT}, Rajshahi, Bangladesh, from February 24, 2026 to March 10, 2026. Texlab IT is a prominent digital agency and IT training institute specializing in web services, full-stack application development, and skill training. During the two-week attachment, the primary objective was to design, develop, and stabilize a production-grade web application called the \textbf{URL Shrinker API} under industrial supervision, bridging the gap between academic theory and practical software engineering workflows.
+
+The URL Shrinker API is a high-performance URL shortening service designed to handle substantial request throughput. It comprises a Go-based backend and a React/Next.js-based frontend. The system includes JWT-based user authentication, custom short code generation, public redirects with high-speed caching using a Redis-based cache-aside strategy, request rate limiting, and an analytics engine that tracks redirect statistics. It also features a background worker routine that runs periodically to remove expired links from the database. 
+
+During the internship, several engineering challenges were addressed and resolved, including Turbopack compilation instability on the frontend, database pool synchronization utilizing PostgreSQL and the `sqlc` library, cache stampede prevention, and handling CORS and authentication middleware in Go. The development process adhered to professional software engineering standards, utilizing Docker for local containerization and GitHub for version control.
+
+This attachment facilitated significant professional and technical growth, enhancing skills in Go database programming, cache-aside system design, frontend state management, and debugging in a fast-paced development environment. Furthermore, it provided exposure to industrial practices in safety, legal compliance (GDPR and data privacy), professional ethics, and collaborative development workflows, laying a solid foundation for lifelong learning in engineering.

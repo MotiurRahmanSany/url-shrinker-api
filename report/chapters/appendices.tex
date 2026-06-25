@@ -1,0 +1,152 @@
+\chapter{Appendices}
+
+\section*{Appendix A: Docker Compose Orchestration}
+The following `docker-compose.yaml` configuration orchestrates the local development containers, setting up healthy dependency links between the PostgreSQL database, Redis cache, Go API backend, and the Next.js client frontend:
+
+\begin{lstlisting}[language=XML]
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: url_shrinker_postgres
+    environment:
+      POSTGRES_USER: api_user
+      POSTGRES_PASSWORD: api_password
+      POSTGRES_DB: url_shrinker_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U api_user -d url_shrinker_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: url_shrinker_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: .
+    container_name: url_shrinker_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_DSN=postgres://api_user:api_password@postgres:5432/url_shrinker_db?sslmode=disable
+      - REDIS_ADDR=redis:6379
+      - JWT_SECRET=your_super_secret_jwt_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+\end{lstlisting}
+
+\newpage
+
+\section*{Appendix B: Redirection and Caching Core Handler}
+Below is the core Go handler function that processes incoming short code redirection requests, executing the Cache-Aside pattern logic and recording analytics metrics asynchronously:
+
+\begin{lstlisting}[language=Go]
+func (h *URLHandler) Redirect(w http.ResponseWriter, r *http.Request) {
+    code := r.PathValue("code")
+    if code == "" {
+        response.Error(w, http.StatusBadRequest, "short code is required")
+        return
+    }
+
+    ctx := r.Context()
+    
+    // 1. Attempt to fetch URL details from Redis Cache
+    var urlData *domain.URL
+    cachedJSON, err := h.cache.Get(ctx, "url:"+code)
+    if err == nil && cachedJSON != "" {
+        json.Unmarshal([]byte(cachedJSON), &urlData)
+    }
+
+    // 2. Cache Miss: Query PostgreSQL
+    if urlData == nil {
+        urlData, err = h.service.GetActiveURLByCode(ctx, code)
+        if err != nil {
+            if errors.Is(err, service.ErrURLNotFound) {
+                response.Error(w, http.StatusNotFound, "url not found")
+                return
+            }
+            response.Error(w, http.StatusInternalServerError, "database error")
+            return
+        }
+
+        // Write URL back to Redis for subsequent hits (TTL: 24 Hours)
+        jsonData, _ := json.Marshal(urlData)
+        h.cache.Set(ctx, "url:"+code, string(jsonData), 24*time.Hour)
+    }
+
+    // 3. Check for link constraints (expiration, clicks limit)
+    if urlData.IsExpired() || urlData.IsDeactivated() {
+        response.Error(w, http.StatusGone, "short url has expired or been disabled")
+        return
+    }
+
+    // 4. Asynchronously log redirection analytics
+    go func() {
+        ip := r.RemoteAddr
+        ua := r.UserAgent()
+        ref := r.Referer()
+        _ = h.service.RecordClickAnalytics(context.Background(), urlData.ID, ip, ua, ref)
+    }()
+
+    // 5. Respond with HTTP 302 Redirection
+    http.Redirect(w, r, urlData.OriginalURL, http.StatusFound)
+}
+\end{lstlisting}
+
+\newpage
+
+\section*{Appendix C: Daily Log Sheets Outline}
+During the two-week attachment, the following task logs were registered:
+
+\begin{longtable}{|p{2.5cm}|p{6cm}|p{6.5cm}|}
+    \hline
+    \textbf{Date} & \textbf{Tasks Assigned} & \textbf{Learning Outcomes} \\
+    \hline
+    Feb 24, 2026 & Onboarding, environment setup, database schema review. & Setup Go and Postgres containers; initialized Git repo. \\
+    \hline
+    Feb 25, 2026 & Relational schema creation and goose database migrations. & Designed user and URL schemas; wrote SQL migration scripts. \\
+    \hline
+    Feb 26, 2026 & sqlc integration for type-safe database queries. & Compiled raw SQL statements into Go database models. \\
+    \hline
+    Feb 27, 2026 & Go HTTP router setup and service abstraction patterns. & Configured request/response utilities; built routing paths. \\
+    \hline
+    Feb 28, 2026 & User registration and authentication handlers. & Implemented bcrypt hashing and JWT token signing. \\
+    \hline
+    Mar 01, 2026 & URL shortener handler with Base62/random generation. & Handled custom short codes and collision checking rules. \\
+    \hline
+    Mar 02, 2026 & Redis integration and Cache-Aside pattern logic. & Set up cache lookup and auto-invalidation operations. \\
+    \hline
+    Mar 03, 2026 & Sliding-window rate limiting middleware. & Utilized Redis sorted sets (ZSET) to prevent API abuse. \\
+    \hline
+    Mar 04, 2026 & Background expired-links cleanup worker. & Built background ticker loops to clean database records. \\
+    \hline
+    Mar 05, 2026 & Next.js frontend client setup and routing structure. & Managed hydration rendering issues; structured layout pages. \\
+    \hline
+    Mar 06, 2026 & Connecting client forms to backend endpoints. & Managed API requests; handled CORS policy configurations. \\
+    \hline
+    Mar 07, 2026 & Debugging Turbopack crashes and compile issues. & Reconfigured compiler setups; cleared compilation caches. \\
+    \hline
+    Mar 08, 2026 & Full stack integration and manual redirection testing. & Checked redirect speeds; validated rate limiter headers. \\
+    \hline
+    Mar 09, 2026 & Supervisor review and report compilation prep. & Implemented immediate eviction hooks; prepared docs. \\
+    \hline
+    Mar 10, 2026 & Final testing, code cleanup, and presentation. & Finalized report template; packaged container scripts. \\
+    \hline
+\end{longtable}

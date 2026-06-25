@@ -1,0 +1,52 @@
+\chapter{Contribution to the Organization}
+
+\section{Specific Contributions and Their Impact}
+During the two-week attachment at Texlab IT, I worked closely with the development team and was responsible for designing and implementing the core architecture of the URL Shrinker API. My contributions spanned the database layer, backend service implementation, system optimization, and frontend integration.
+
+\subsection{Database Schema Design and Migration Setup}
+I designed the schema for storing user credentials, shortened URL parameters, and redirect click logs. I initialized the version-controlled migration structure using **goose**. The SQL migration files were structured to support clean updates and rollbacks.
+*   **Impact:** By introducing version-controlled migrations, we ensured that the PostgreSQL database could be set up reliably on any developer machine with identical constraints, indexes, and foreign keys.
+
+\subsection{Backend Routing and Security Middleware}
+I implemented the backend HTTP router using Go's standard library `net/http` multiplexer. I developed several critical middleware layers:
+\begin{itemize}
+    \item \textbf{CORS Middleware:} Allowed safe cross-origin resource access for the frontend client.
+    \item \textbf{Logging Middleware:} Formatted request details, response status codes, and execution latencies in the console.
+    \item \textbf{Auth Middleware:} Extracted and validated JWT access tokens, inserting user data into the Go `context.Context` payload for subsequent handler access.
+\end{itemize}
+*   **Impact:** This middleware pipeline secured the API, protected administrative routes from unauthorized access, and simplified request tracing during debugging.
+
+\subsection{Implementation of the Cache-Aside Pattern}
+I wrote the caching layer logic inside the URL repository service. This service interfaces with Redis to search for active short codes and write them to the cache on database queries. 
+*   **Impact:** This optimization reduced response latencies for active short URLs. Benchmark measurements showed redirection latencies fell from **15–30 ms (PostgreSQL)** to **2–5 ms (Redis)**, improving request throughput.
+
+\subsection{Asynchronous Analytics Engine}
+I designed the analytics tracking flow. Instead of writing click records to the database synchronously—which would delay the user's redirect response—I structured the redirect handler to log click metadata using Go goroutines:
+\begin{lstlisting}[language=Go]
+// Asynchronously track click analytics without delaying the redirect response
+go func(code string, ip string, ua string, ref string) {
+    err := s.repo.RecordClick(context.Background(), code, ip, ua, ref)
+    if err != nil {
+        log.Printf("Failed to record click analytics: %v", err)
+    }
+}(code, clientIP, userAgent, referrer)
+\end{lstlisting}
+*   **Impact:** This decoupled the redirection performance from database write times, providing users with fast redirects.
+
+\subsection{Background Housekeeping Worker}
+I implemented the automated cleanup process (`internal/worker/cleanup.go`). Using a Go `time.Ticker`, this routine runs in the background and executes a purge query every hour to remove expired URL records.
+*   **Impact:** This prevented the PostgreSQL database from accumulating expired links, keeping database indexes compact and ensuring efficient storage usage.
+
+\section{Improvements Suggested and Implemented}
+During development, I proposed and implemented several system improvements:
+\begin{enumerate}
+    \item \textbf{Transition from ORM to sqlc:} The initial design proposed a traditional ORM. I recommended switching to `sqlc` to ensure SQL syntax correctness at compile time. This change eliminated reflection overhead and made the database layer more robust.
+    \item \textbf{JWT Refresh Token Rotation:} To improve system security, I recommended and implemented a refresh token rotation flow. Instead of using long-lived access tokens, the frontend uses short-lived tokens and refreshes them using a secure, database-verified refresh token, mitigating token-hijacking risks.
+\end{enumerate}
+
+\section{Feedback from Supervisors}
+My industry supervisor at Texlab IT reviewed the system at key milestones:
+*   **Code Review Feedback:** The supervisor commended the clean code structure, directory layout, and separation of concerns (decoupling HTTP controllers from database queries).
+*   **Performance Feedback:** The supervisor noted that the cache-aside implementation was robust. They suggested adding an explicit cache eviction hook: if a user manually deactivates or deletes a short link, the system should immediately remove the corresponding Redis cache key, preventing stale cached redirects (which was subsequently implemented).
+*   **Professional Growth Feedback:** The supervisor highlighted that my ability to troubleshoot Next.js/Turbopack compilation errors independently demonstrated strong adaptability and problem-solving skills, which are crucial for professional engineering roles.
+Layout configuration files, Docker setups, and migration scripts were shared with the Texlab IT team as reference templates for future Go-based internal service developments.
