@@ -1,0 +1,85 @@
+\chapter{Tools \& Techniques}
+
+\section{Engineering and IT Tools Used}
+The development and execution of the URL Shrinker API utilized a modern suite of software development kits, runtimes, database management engines, and auxiliary developer tools.
+
+\subsection{Hardware Resources}
+The development workstation utilized for this project was configured with:
+\begin{itemize}
+    \item \textbf{Processor:} Intel Core i5 or equivalent multi-core processor.
+    \item \textbf{Memory:} 16 GB DDR4 RAM.
+    \item \textbf{Operating System:} Linux (Ubuntu/Debian-based environment).
+\end{itemize}
+
+\subsection{Software Languages and Runtimes}
+\begin{itemize}
+    \item \textbf{Go 1.25+:} Used as the primary programming language for the backend API services and background workers.
+    \item \textbf{JavaScript/TypeScript:} Used on the frontend to build dynamic components.
+    \item \textbf{Node.js 20+:} Used as the runtime environment for the Next.js frontend application.
+\end{itemize}
+
+\subsection{Database and Cache Engines}
+\begin{itemize}
+    \item \textbf{PostgreSQL 16:} A powerful, open-source object-relational database system used for storing users, links, and analytics data.
+    \item \textbf{Redis 7:} An open-source, in-memory data structure store used as a high-speed cache and a rate limiter storage.
+\end{itemize}
+
+\subsection{Development Utilities and Libraries}
+\begin{itemize}
+    \item \textbf{Docker \& Docker Compose:} Containerization platform used to define and run multi-container applications (Postgres, Redis, Go Backend, Next.js Frontend).
+    \item \textbf{goose:} A database migration tool written in Go to execute version-controlled schema increments.
+    \item \textbf{sqlc:} A compiler that compiles raw SQL queries into type-safe, boilerplate-free Go code.
+    \item \textbf{air:} A live-reload tool for Go applications that rebuilds the backend binary upon source code changes.
+\end{itemize}
+
+\section{Selection Criteria and Justification}
+Each component of the technology stack was carefully selected to fulfill specific system requirements, balancing development speed, code safety, and runtime performance.
+
+\subsection{Why Go (Golang)?}
+Go is widely chosen by modern technology firms for backend engineering due to several core features:
+\begin{itemize}
+    \item \textbf{Concurrency Model:} Go's concurrency is built into the runtime through light-weight execution threads called **goroutines** and communication pipelines called **channels**. This makes it easy to run background cleanup tasks and write to analytics without blocking the critical path of HTTP responses.
+    \item \textbf{Execution Speed:} Go compiles directly to machine code, resulting in fast execution times and low memory usage, unlike interpreted languages (Python, Ruby) or JVM-based runtimes.
+    \item \textbf{Single Binary Deployment:} Go compiles into a single, self-contained binary containing all dependencies, simplifying containerization and deployment.
+\end{itemize}
+
+\subsection{Why PostgreSQL and sqlc?}
+For persistent storage, PostgreSQL was selected over NoSQL alternatives (like MongoDB) because URL redirection requires strict relational integrity (such as cascading deletions of click statistics when a short code is deleted).
+Instead of using a traditional Object-Relational Mapper (ORM) like Gorm, this project uses **sqlc**. Traditional ORMs generate complex, slow SQL queries and introduce runtime reflection overhead. In contrast, `sqlc` follows a different approach: the developer writes raw SQL queries, and `sqlc` compiles them into type-safe Go functions. 
+\begin{itemize}
+    \item **Compile-Time Checks:** If an SQL query contains a syntax error or references a non-existent column, `sqlc` fails to compile, catching schema bugs before compilation.
+    \item **No Overhead:** It generates standard, fast library queries using the performance-tuned `pgx` driver.
+\end{itemize}
+
+\subsection{Why Redis for Caching and Rate Limiting?}
+Redis stores all data in memory, achieving lookup speeds of less than a millisecond. In a URL shortener, serving active links from Redis prevents disk-bound database queries. 
+Additionally, Redis is used to implement a **sliding window rate limiter** using Redis sorted sets (ZSET). It tracks requests per IP address, preventing denial-of-service (DoS) attempts on the creation endpoints.
+
+\subsection{Why Docker and Docker Compose?}
+Docker ensures that the application runs identically on all environments (development, staging, and production). Docker Compose allows us to define our multi-service architecture (database, cache, API, and client) in a single YAML configuration file (`docker-compose.yaml`) and start the entire stack with a single command: `docker compose up`.
+
+\section{Application in Solving Complex Engineering Problems}
+The selected tools were combined to solve critical system problems:
+\begin{itemize}
+    \item \textbf{Type-Safe Database Mapping:} With `sqlc`, database rows are mapped to Go structs automatically. For example, nullable Postgres fields are safely typed as `pgtype.Text` or `pgtype.Timestamp`, avoiding NULL pointer panics.
+    \item \textbf{Non-blocking Task Delegation:} When a client requests a URL redirection, recording analytics (IP, User-Agent) involves database insertion, which takes time. To keep the redirect fast, the handler uses a Go **goroutine**:
+    \begin{lstlisting}[language=Go]
+    go service.RecordClick(ctx, urlID, reqIP, userAgent, referrer)
+    \end{lstlisting}
+    This instantly returns the HTTP 302 redirect to the client while writing the analytics data asynchronously.
+\end{itemize}
+
+\section{Understanding Limitations and Constraints}
+While the tools chosen are highly performant, they introduce some system constraints:
+\begin{itemize}
+    \item \textbf{Memory Bound Caching:} Redis is limited by the system's physical RAM. If millions of links are cached, the system might exhaust its memory. To manage this, we set a cache eviction policy in Redis (e.g., `allkeys-lru` which removes Least Recently Used keys when memory is full) and assign a 24-hour TTL to cached links.
+    \item \textbf{Docker Network Latency:} Running services in containerized environments introduces a minor network virtualization overhead compared to running bare-metal, although this is negligible for local testing.
+\end{itemize}
+
+\section{Examples of Simulation and Testing Tools}
+To validate the system, three testing methodologies were applied:
+\begin{enumerate}
+    \item \textbf{Unit and Integration Testing:} The standard `go test` library was used to test domain services (such as verifying password hash verification and custom short code validations).
+    \item \textbf{Manual API Testing:} Postman and the command-line utility `curl` were used to test API responses, CORS header presence, rate-limiting HTTP headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`), and redirection paths.
+    \item \textbf{Database Migrations Validation:} The `goose status` and `goose up/down` commands were run inside the Docker database container to ensure database schema changes migrated and rolled back without losing data.
+\end{enumerate}

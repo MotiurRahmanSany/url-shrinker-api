@@ -1,0 +1,40 @@
+\chapter{Conclusion \& Recommendations}
+
+\section{Summary of Work Done}
+The two-week industrial attachment at \textbf{Texlab IT}, Rajshahi, was successfully completed, culminating in the development and optimization of the \textbf{URL Shrinker API}. During this period, I designed and built a full-stack, production-ready web application using Go 1.25+, PostgreSQL 16, Redis 7, and Next.js. 
+
+Key achievements include:
+\begin{itemize}
+    \item Developing a multi-layered REST API backend in Go using clean architecture principles, separating HTTP handlers, service logic, and database repositories.
+    \item Implementing goose database migrations and type-safe SQL query compilation using sqlc, improving database safety and schema reliability.
+    \item Setting up a Cache-Aside redirection pipeline using Redis, lowering lookup latencies to under 5 milliseconds.
+    \item Building security middleware for JWT verification (with refresh token rotation) and a sliding-window rate limiter to prevent API abuse.
+    \item Developing a React/Next.js frontend client and successfully resolving Turbopack development compilation crashes.
+    \item Constructing a Docker Compose environment that orchestrates all system containers with health checks, ensuring reproducible deployments.
+\end{itemize}
+
+This practical training successfully bridged the gap between academic theory and industry practice, providing hands-on experience in building scalable, secure, and maintainable software systems.
+
+\section{Recommendations for the Host Organization}
+Based on my observations during the attachment, I suggest the following recommendations for Texlab IT:
+\begin{itemize}
+    \item \textbf{Adopt Go for Microservices:} For backend applications requiring high throughput (such as API gateways or notifications), Go provides better resource usage and performance compared to interpreted runtimes.
+    \item \textbf{Incorporate sqlc in Project Templates:} Utilizing `sqlc` instead of large ORMs protects projects from query bugs by verifying database statements at compile time, improving code quality.
+    \item \textbf{Expand Monitoring and Telemetry:} Integrating tools like Prometheus and Grafana would allow development teams to monitor CPU, memory, database connection pool status, and Redis cache hit ratios in real time, aiding proactive debugging.
+\end{itemize}
+
+\section{Recommendations for the University}
+To help future students prepare for industry requirements, the following updates to the university curriculum are recommended:
+\begin{itemize}
+    \item \textbf{Teach Version Control early:} Version control (Git/GitHub) should be integrated into first-year programming labs rather than being introduced in senior years.
+    \item \textbf{Introduce Caching & System Design:} Courses in database management systems and web engineering should cover caching patterns (Cache-Aside, Write-Through) and database migration tools.
+    \item \textbf{Focus on Containerization:} Familiarity with Docker is a standard requirement in software development. Introducing container concepts in operating systems or software development courses would help students build deployable projects.
+\end{itemize}
+
+\section{Recommendations for Future Interns}
+For future students undertaking industrial attachments:
+\begin{itemize}
+    \item \textbf{Learn Core Fundamentals:} Focus on understanding underlying concepts—such as database indices, HTTP status codes, and concurrency safety—rather than focusing solely on specific high-level frameworks.
+    \item \textbf{Gain Command Line Proficiency:} Get comfortable using terminal utilities, Docker commands, and configuration files, as this is essential for modern development.
+    \item \textbf{Practice Active Problem-Solving:} When facing compilation or environment errors, study the error logs and document the resolution process. This builds independent debugging skills that are highly valued in software engineering teams.
+\end{itemize}

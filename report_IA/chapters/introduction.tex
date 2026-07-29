@@ -1,0 +1,59 @@
+\chapter{Introduction}
+
+\section{Background of Industrial Attachment}
+The field of software engineering requires a strong connection between academic theory and practical application. While academic coursework provides students with the fundamental concepts of algorithms, data structures, database management systems, and programming languages, it often lacks the direct, fast-paced environment of professional software development. An industrial attachment bridges this gap, allowing students to apply theoretical knowledge to solve real-world problems and understand how professional software systems are architected, developed, debugged, and deployed.
+
+For my industrial attachment, \textbf{Texlab IT} was selected as the host organization. Located at Alokar Mor, Rajshahi, Texlab IT is a prominent digital service provider and IT training institute. Established in 2015, Texlab IT has built a reputation for offering practical web development training and delivering high-quality web design and digital marketing services to clients in Bangladesh and internationally. Working within Texlab IT's software engineering division provided a unique opportunity to gain exposure to professional agile software development methodologies, industry-standard toolchains (including Go, Postgres, Redis, and Next.js), and team collaboration practices.
+
+\section{Importance in Achieving Engineering Program Outcomes}
+Undergraduate engineering programs aim to develop core competencies in students, known as Program Outcomes (POs). These include engineering knowledge, problem analysis, modern tool usage, design and development of solutions, societal and environmental awareness, professional ethics, and individual and team work. The industrial attachment at Texlab IT played a direct role in achieving these engineering outcomes by placing me in a professional setting where I was required to:
+\begin{itemize}
+    \item \textbf{Solve Complex Engineering Problems:} Analyze the scalability, performance, and throughput requirements of web APIs, such as mitigating cache stampedes and managing high database read throughput.
+    \item \textbf{Use Modern Engineering Tools:} Apply modern languages (Go 1.25+), databases (Postgres 16, Redis 7), version control systems (Git and GitHub), containerization (Docker, Docker Compose), and build tools (`make`, `sqlc`, `goose`).
+    \item \textbf{Design and Develop Solutions:} Develop a multi-tiered API architecture incorporating middleware pipelines (rate limiting, authentication, logging) and database schemas that address system constraints.
+    \item \textbf{Analyze Societal and Ethical Aspects:} Ensure user privacy, implement data protection policies (such as GDPR compliance regarding IP tracking), and adhere to professional codes of conduct when managing user data.
+\end{itemize}
+
+\section{Objectives of the Attachment}
+The main objectives of this industrial attachment were:
+\begin{enumerate}
+    \item To design and implement a production-grade URL shortening web service (the URL Shrinker API) using Go, PostgreSQL, and Redis.
+    \item To build and integrate a React/Next.js-based client application that communicates with the backend API.
+    \item To implement advanced backend engineering concepts, including cache-aside strategies, token-based authentication (JWT) with rotation, sliding-window rate limiting, and background worker routines.
+    \item To learn about industry practices regarding code organization, security, database migration pipelines, and dependency injection.
+    \item To enhance problem-solving and debugging skills when resolving real-time compilation, networking, and environment configuration errors.
+\end{enumerate}
+
+\section{Scope and Limitations}
+The scope of this project is to build a complete full-stack URL shortening web application. The backend handles link creation, redirection, analytics tracking, garbage collection of expired records, and security features like JWT auth and rate limiting. The frontend client provides a user interface for link management, user authentication, and viewing usage metrics.
+
+However, the project is subject to several limitations:
+\begin{itemize}
+    \item \textbf{Time Constraints:} The attachment period was limited to two weeks, which restricted the development of advanced features such as geo-distributed database replication, multi-node Redis clustering, and complex user role management.
+    \item \textbf{Infrastructure Constraints:} The project was designed and tested in a local development environment (Docker Compose) and was not deployed on a cloud provider (such as AWS or GCP) with active global CDN configurations.
+    \item \textbf{Analytics Resolution:} Click metrics track basic parameters like IP addresses, request headers, and timestamps, but do not integrate advanced IP-to-geolocation database lookup engines.
+\end{itemize}
+
+\section{Methodology}
+The methodology adopted during this industrial attachment followed an agile, iterative approach:
+\begin{enumerate}
+    \item \textbf{Requirements Gathering and Analysis:} Studying existing URL shortening patterns (e.g., TinyURL) and analyzing functional and non-functional requirements.
+    \item \textbf{System and Database Design:} Mapping out the database schema, selecting appropriate indices, and designing the cache-aside flow for fast redirects.
+    \item \textbf{Backend Development:} Creating database tables using goose migrations, generating Go code using `sqlc`, writing services and handlers in Go, and establishing middleware checks.
+    \item \textbf{Frontend Integration:} Initializing a Next.js application, designing components, setting up network fetching routines, and debugging integration issues.
+    \item \textbf{Testing and Refinement:} Writing manual test scripts, conducting integration tests, and fixing performance bottlenecks.
+\end{enumerate}
+
+\section{Structure of the Report}
+The rest of this report is organized as follows:
+\begin{itemize}
+    \item \textbf{Chapter 2} gives an overview of Texlab IT, its history, departments, and services.
+    \item \textbf{Chapter 3} provides details on the URL Shrinker API design, requirements, and system architecture.
+    \item \textbf{Chapter 4} discusses the technical tools and software frameworks used, justifying their selection.
+    \item \textbf{Chapter 5} addresses the societal, environmental, health, and legal aspects of the software.
+    \item \textbf{Chapter 6} outlines professional ethics, license compliance, and security responsibilities.
+    \item \textbf{Chapter 7} reflects on the technical and personal skills acquired and lifelong learning outcomes.
+    \item \textbf{Chapter 8} discusses the technical challenges encountered (such as frontend Turbopack errors) and how they were solved.
+    \item \textbf{Chapter 9} describes the specific contributions made to the project during the attachment.
+    \item \textbf{Chapter 10} concludes the report and offers recommendations for future interns and development teams.
+\end{itemize}

@@ -1,0 +1,43 @@
+\chapter{Professional Ethics \& Responsibilities}
+
+\section{Ethical Challenges in URL Shortener Services}
+URL shorteners introduce unique ethical challenges due to the nature of link masking. By hiding the original destination URL behind a generic short code (e.g., `http://localhost/r/a3F8`), malicious actors can exploit the service to bypass security filters. Key security and ethical issues include:
+\begin{itemize}
+    \item \textbf{Phishing and Social Engineering:} Attackers use short links to trick users into visiting fake banking or login pages, masking the malicious domain name.
+    \item \textbf{Malware Distribution:} Short URLs can hide links that trigger automatic downloads of malware or ransomware.
+    \item \textbf{Spamming:} Spammers bypass email and messaging filters by shortening links to low-reputation or blacklisted websites.
+\end{itemize}
+
+As developers, we have an ethical responsibility to build safeguards that prevent our software from being used to cause harm. In the URL Shrinker API, this was addressed by:
+\begin{itemize}
+    \item Implementing **expiration limits** and **maximum click counts** to limit the lifespan of potentially malicious links.
+    \item Restricting URL creation rate using **sliding window rate limits** to prevent automated script abuse.
+    \item Allowing administrators to **deactivate** suspicious links immediately.
+\end{itemize}
+
+\section{Compliance with Professional Codes of Ethics}
+Our engineering work follows the professional codes of conduct defined by the **IEEE (Institute of Electrical and Electronics Engineers)** and the **ACM (Association for Computing Machinery)**. During this attachment, the following principles were integrated into the development process:
+\begin{itemize}
+    \item \textbf{Avoid Harm (ACM 1.2):} We do not design software to deceive users. By logging click analytics responsibly and providing clear, actionable error pages (like `410 Gone` for expired links), we protect users from broken or hijacked endpoints.
+    \item \textbf{Be Honest and Trustworthy (ACM 1.3):} We represent our software's capabilities and limitations truthfully. This includes acknowledging when the cache is invalid or when rate limits are exceeded, rather than masking system failures.
+    \item \textbf{Respect Privacy (ACM 1.6):} We do not log more visitor data than necessary. Analytics tracking focuses on aggregations (such as tracking browser distributions) rather than building profiles of specific individuals.
+\end{itemize}
+
+\section{Handling Intellectual Property and Confidentiality}
+Working inside a commercial entity like Texlab IT requires strict adherence to intellectual property (IP) and confidentiality agreements:
+\begin{itemize}
+    \item \textbf{Confidentiality of Client Data:} Interns and employees are prohibited from sharing proprietary business logic, client lists, or internal server configurations. The code built for this project was developed as a clean, open-source demonstration, ensuring no proprietary company IP was disclosed.
+    \item \textbf{Responsible Open-Source Usage:} The URL Shrinker API utilizes open-source libraries, including Go packages like `pgx`, `go-redis`, and `golang-jwt`. Each package is used in compliance with its license (primarily MIT and Apache 2.0 licenses). This requires retaining the copyright notices and license text in our codebase, showing respect for open-source creators.
+    \item \textbf{Avoiding Plagiarism:} Every part of the report and system documentation is authored independently. Academic resources and documentation are cited using standard IEEE/APA bibliography formats.
+\end{itemize}
+
+\section{Ethical Decision-Making Examples}
+A practical ethical decision made during development concerned the **analytics retention policy**. While storing detailed logs of every click is helpful for business analysis, keeping this data indefinitely creates security risks if the database is compromised. 
+To resolve this, we implemented a cascading deletion strategy: when a short URL is deleted or cleaned up by the background worker, its associated click logs in the `clicks` table are instantly removed:
+\begin{lstlisting}[language=SQL]
+ALTER TABLE clicks 
+ADD CONSTRAINT fk_clicks_url_id 
+FOREIGN KEY (url_id) REFERENCES urls(id) 
+ON DELETE CASCADE;
+\end{lstlisting}
+This database rule ensures that once a link is deleted, all historical visitor tracking data is removed, adhering to the ethical principle of the "right to be forgotten."

@@ -1,0 +1,45 @@
+\chapter{Societal, Health, Safety, Legal \& Cultural Considerations}
+
+\section{Workplace Health and Safety Measures}
+During the two-week industrial attachment at Texlab IT, I worked in a professional office environment that prioritized employee health and safety. Software engineering roles involve long periods of sedentary work, which can lead to physical strain if proper measures are not in place. The following workplace safety practices were observed at Texlab IT:
+\begin{itemize}
+    \item \textbf{Ergonomic Setup:} Workstations were equipped with adjustable office chairs and desks that promote proper typing posture, reducing risks of repetitive strain injuries (RSI) and lower back pain.
+    \item \textbf{Visual Strain Mitigation:} Developers were encouraged to practice the "20-20-20 rule" (looking at an object 20 feet away for 20 seconds every 20 minutes) and use monitors with anti-glare filters.
+    \item \textbf{Physical Infrastructure Safety:} The office kept clear pathways to prevent tripping hazards, maintained visible exit signage, and placed fire extinguishers at key points.
+\end{itemize}
+
+\section{Legal Compliance in Engineering Activities}
+Web applications that process user data must comply with international and local privacy laws. Because the URL Shrinker API logs visitor data (such as IP addresses and User-Agent headers) to compile analytics, legal compliance was a core focus of the system design:
+
+\subsection{GDPR and CCPA Compliance}
+Under the European Union's General Data Protection Regulation (GDPR) and the California Consumer Privacy Act (CCPA), IP addresses are classified as Personal Identifiable Information (PII). Logging a user's complete IP address without consent is a compliance violation.
+To address this:
+\begin{enumerate}
+    \item \textbf{IP Masking:} The system was designed to hash or mask visitor IP addresses before persistent storage, or use them strictly for security rate-limiting in Redis (which expires keys within minutes) without writing raw IP addresses to the long-term `clicks` database table.
+    \item \textbf{Opt-out / Account Deletion:} Users can delete their accounts, which triggers a cascading database delete that completely removes their profile, generated short links, and associated click analytics.
+\end{enumerate}
+
+\section{Societal and Cultural Awareness in Solution Design}
+URL shorteners have a significant impact on modern information sharing and communication:
+\begin{itemize}
+    \item \textbf{Character-Constrained Sharing:} Platforms like SMS and X (formerly Twitter) impose strict character limits. Short URLs allow users to share long, descriptive web links without exhausting character allowances.
+    \item \textbf{User Interface Accessibility:} Long URLs containing complex query parameters (e.g., tracking tags, coordinate points) are visually cluttered and difficult for screen readers to process. Shortened URLs are cleaner, easier to read, and more accessible to users with visual or cognitive impairments.
+    \item \textbf{Information Literacy:} The system helps organizations share educational resources and public services in local communities via printed media (leaflets, posters) using short codes or generated QR codes that are easy to type.
+\end{itemize}
+
+\section{Environmental Sustainability Considerations}
+Information Technology infrastructure contributes significantly to global electricity consumption and carbon emissions. As software engineers, writing resource-efficient code is an active way to promote environmental sustainability, often referred to as **Green Computing**.
+
+\subsection{Language Efficiency Comparison}
+The choice of Go for backend development directly impacts server-side energy consumption:
+\begin{itemize}
+    \item Go is a compiled, statically typed language that executes close to the metal with minimal CPU overhead.
+    \item Interpreted runtimes (Python, Ruby) or virtual machines (Java) consume significantly more CPU cycles and RAM to process the same number of HTTP requests.
+    \item By using Go, the URL Shrinker API handles a higher volume of traffic per virtual server. This reduces the number of cloud server instances required, directly lowering data center electricity consumption and cooling requirements.
+\end{itemize}
+
+\subsection{Caching and Database Efficiency}
+Using Redis to cache hot redirect paths reduces read operations on PostgreSQL. Since disk read/write cycles on physical SSDs or HDDs consume more energy than RAM checks, this caching layer optimizes hardware resource usage, extending server drive lifespans and reducing data center hardware waste.
+
+\section{Case Examples from the Attachment Site}
+At Texlab IT, developers discussed how client systems log traffic. In past projects, logging raw HTTP headers led to privacy questions from international clients. During my attachment, I worked with the team to implement IP-hashing middleware in Go. This middleware hashes the client's IP address with a salt before logging it to the database, demonstrating a practical approach to legal compliance and data privacy in production systems.
